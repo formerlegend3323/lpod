@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body { background:#111; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:monospace; }
+#ipod-container { width:260px; transform-origin:top left; }
 #ipod { width:260px; background:#e5e5e5; border-radius:30px; box-shadow:0 10px 30px rgba(0,0,0,.6); padding:15px; box-sizing:border-box; }
 #screen { background:#cfd6cf; height:180px; border-radius:6px; padding:6px; box-sizing:border-box; overflow:hidden; }
 #header{text-align:center; font-weight:bold;}
@@ -29,23 +30,25 @@ body { background:#111; display:flex; justify-content:center; align-items:center
 </head>
 <body>
 
-<div id="ipod">
-  <div id="screen">
-    <div id="header">lpod</div>
-    <ul id="menu"></ul>
-    <ul id="tracklist"></ul>
-    <div id="track-info"></div>
-    <div id="progress-container"><div id="progress"></div></div>
-    <div id="time"></div>
-    <div id="status"></div>
-  </div>
+<div id="ipod-container">
+  <div id="ipod">
+    <div id="screen">
+      <div id="header">lpod</div>
+      <ul id="menu"></ul>
+      <ul id="tracklist"></ul>
+      <div id="track-info"></div>
+      <div id="progress-container"><div id="progress"></div></div>
+      <div id="time"></div>
+      <div id="status"></div>
+    </div>
 
-  <div id="wheel">
-    <button id="btn-menu">MENU</button>
-    <button id="btn-play">▶</button>
-    <button id="btn-prev">≪</button>
-    <button id="btn-next">≫</button>
-    <button id="btn-center"></button>
+    <div id="wheel">
+      <button id="btn-menu">MENU</button>
+      <button id="btn-play">▶</button>
+      <button id="btn-prev">≪</button>
+      <button id="btn-next">≫</button>
+      <button id="btn-center"></button>
+    </div>
   </div>
 </div>
 
@@ -53,6 +56,7 @@ body { background:#111; display:flex; justify-content:center; align-items:center
 <audio id="audio"></audio>
 
 <script>
+// --- Everything else is the same ---
 const menuEl = document.getElementById('menu');
 const tracklistEl = document.getElementById('tracklist');
 const trackInfo = document.getElementById('track-info');
@@ -68,18 +72,16 @@ const btnPlay = document.getElementById('btn-play');
 const btnMenu = document.getElementById('btn-menu');
 const btnCenter = document.getElementById('btn-center');
 
-let state='root'; // root, music, streaming, nowplaying
+let state='root'; 
 let cursor=0;
 let library=[];
 let current=0;
 let shuffle=false;
 let inactivityTimer=null;
 
-// Menus
 const rootMenu=['Local Music','Streaming'];
 const musicMenu=['Upload','Play First','Shuffle','Now Playing'];
 
-// --- Inactivity timer to auto-return to Now Playing ---
 function resetInactivity(){
   clearTimeout(inactivityTimer);
   if(state==='music'){
@@ -90,7 +92,6 @@ function resetInactivity(){
   }
 }
 
-// --- Rendering ---
 function render(){
   resetInactivity();
   menuEl.innerHTML='';
@@ -115,7 +116,7 @@ function render(){
       if(i===cursor) li.className='active';
       menuEl.appendChild(li);
     });
-    if(cursor>=musicMenu.length){ // track list
+    if(cursor>=musicMenu.length){
       library.forEach((track,i)=>{
         const li=document.createElement('li');
         li.textContent=track.name;
@@ -134,7 +135,6 @@ function render(){
   }
 }
 
-// --- Playback ---
 function playIndex(i){
   current=i;
   audio.src=library[i].url;
@@ -143,16 +143,14 @@ function playIndex(i){
   render();
 }
 
-// --- File upload ---
 fileInput.onchange=e=>{
   for(const f of e.target.files){
     library.push({name:f.name,url:URL.createObjectURL(f)});
   }
-  cursor=musicMenu.indexOf('Now Playing')+1; // first track
+  cursor=musicMenu.indexOf('Now Playing')+1;
   render();
 };
 
-// --- Streaming ---
 async function loadRadio(){
   statusEl.textContent='Loading Radio...';
   const res=await fetch('https://de1.api.radio-browser.info/json/stations/topvote/5');
@@ -163,7 +161,6 @@ async function loadRadio(){
   render();
 }
 
-// --- Format time ---
 function formatTime(sec){ let m=Math.floor(sec/60), s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
 audio.ontimeupdate=()=>{
   if(state==='nowplaying' && audio.duration){
@@ -178,7 +175,6 @@ audio.onended=()=>{
   }
 }
 
-// --- Selection ---
 function select(){
   resetInactivity();
   if(state==='root'){
@@ -193,7 +189,7 @@ function select(){
       else if(choice==='Shuffle' && library.length){ shuffle=!shuffle; if(shuffle) current=Math.floor(Math.random()*library.length); playIndex(current);}
       else if(choice==='Now Playing' && audio.src) state='nowplaying';
     }
-    else{ // track list
+    else{
       current=cursor-musicMenu.length;
       playIndex(current);
     }
@@ -201,30 +197,33 @@ function select(){
   render();
 }
 
-// --- Buttons ---
-btnNext.onclick=()=>{
-  resetInactivity();
-  if(state==='nowplaying'){ current=(current+1)%library.length; playIndex(current);}
-  else if(state==='music'){ cursor=(cursor+1)%(musicMenu.length+library.length); render();}
-  else if(state==='root'){ cursor=(cursor+1)%rootMenu.length; render();}
-};
-btnPrev.onclick=()=>{
-  resetInactivity();
-  if(state==='nowplaying'){ current=(current-1+library.length)%library.length; playIndex(current);}
-  else if(state==='music'){ cursor=(cursor-1+musicMenu.length+library.length)%(musicMenu.length+library.length); render();}
-  else if(state==='root'){ cursor=(cursor-1+rootMenu.length)%rootMenu.length; render();}
-};
+btnNext.onclick=()=>{ resetInactivity(); if(state==='nowplaying'){ current=(current+1)%library.length; playIndex(current);}
+else if(state==='music'){ cursor=(cursor+1)%(musicMenu.length+library.length); render();}
+else if(state==='root'){ cursor=(cursor+1)%rootMenu.length; render(); }};
+btnPrev.onclick=()=>{ resetInactivity(); if(state==='nowplaying'){ current=(current-1+library.length)%library.length; playIndex(current);}
+else if(state==='music'){ cursor=(cursor-1+musicMenu.length+library.length)%(musicMenu.length+library.length); render();}
+else if(state==='root'){ cursor=(cursor-1+rootMenu.length)%rootMenu.length; render(); }};
 btnPlay.onclick=()=>{ resetInactivity(); if(audio.src) audio.paused?audio.play():audio.pause(); };
 btnMenu.onclick=()=>{ resetInactivity(); state='root'; cursor=0; render(); };
 btnCenter.onclick=select;
 
-// --- Keyboard ---
 document.addEventListener('keydown',e=>{
   resetInactivity();
   if(e.key==='ArrowRight' && audio.src) audio.currentTime+=10;
   if(e.key==='ArrowLeft' && audio.src) audio.currentTime-=10;
   if(e.key===' ') { e.preventDefault(); btnPlay.click(); }
 });
+
+// --- Scale to fill screen while keeping aspect ratio ---
+function scaleIPod(){
+  const container=document.getElementById('ipod-container');
+  const scaleX = window.innerWidth / 260;
+  const scaleY = window.innerHeight / 360;
+  const scale = Math.min(scaleX, scaleY);
+  container.style.transform = `scale(${scale})`;
+}
+window.addEventListener('resize', scaleIPod);
+scaleIPod();
 
 render();
 </script>
