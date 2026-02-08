@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>lpod</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>lpod debug</title>
 
 <style>
 body {
@@ -20,7 +19,6 @@ body {
   width:260px;
   background:#e5e5e5;
   border-radius:30px;
-  box-shadow:0 10px 30px rgba(0,0,0,.6);
   padding:15px;
 }
 
@@ -30,28 +28,31 @@ body {
   border-radius:6px;
   padding:6px;
   box-sizing:border-box;
-  overflow:hidden;
 }
 
 #header {
-  font-weight:bold;
   text-align:center;
-  margin-bottom:4px;
+  font-weight:bold;
 }
 
 #menu {
   list-style:none;
   padding:0;
-  margin:0;
+  margin:6px 0 0 0;
 }
 
 #menu li {
-  padding:3px 6px;
+  padding:4px;
 }
 
 #menu li.active {
-  background:#000;
-  color:#fff;
+  background:black;
+  color:white;
+}
+
+#status {
+  font-size:10px;
+  margin-top:4px;
 }
 
 #wheel {
@@ -67,21 +68,21 @@ body {
 
 #wheel button {
   position:absolute;
-  background:none;
   border:none;
+  background:none;
   font-weight:bold;
   cursor:pointer;
 }
 
-#btn-menu { top:15px; left:75px; }
-#btn-play { bottom:15px; left:80px; }
-#btn-prev { left:15px; top:85px; }
-#btn-next { right:15px; top:85px; }
+#btn-menu { top:10px; left:75px; }
+#btn-play { bottom:10px; left:80px; }
+#btn-prev { left:10px; top:85px; }
+#btn-next { right:10px; top:85px; }
 #btn-center {
   width:60px;
   height:60px;
   border-radius:50%;
-  background:#ccc;
+  background:#bbb;
   top:70px;
   left:70px;
 }
@@ -91,13 +92,14 @@ body {
 <body>
 <div id="ipod">
   <div id="screen">
-    <div id="header">lpod</div>
+    <div id="header">lpod DEBUG</div>
     <ul id="menu"></ul>
+    <div id="status"></div>
   </div>
 
   <div id="wheel">
     <button id="btn-menu">MENU</button>
-    <button id="btn-play">▶︎</button>
+    <button id="btn-play">▶</button>
     <button id="btn-prev">≪</button>
     <button id="btn-next">≫</button>
     <button id="btn-center"></button>
@@ -109,6 +111,7 @@ body {
 
 <script>
 const menuEl = document.getElementById('menu');
+const statusEl = document.getElementById('status');
 const audio = document.getElementById('audio');
 const fileInput = document.getElementById('fileInput');
 
@@ -125,94 +128,85 @@ let current = 0;
 
 const menus = {
   root: ['Local Music','Streaming'],
-  local: ['All Songs','Shuffle','Upload'],
+  local: ['Upload','Play First','Shuffle'],
   streaming: ['Top Radio'],
 };
 
 function render() {
   menuEl.innerHTML = '';
   menus[state].forEach((item,i)=>{
-    const li=document.createElement('li');
-    li.textContent=item;
-    if(i===cursor) li.classList.add('active');
+    const li = document.createElement('li');
+    li.textContent = item;
+    if(i === cursor) li.className = 'active';
     menuEl.appendChild(li);
   });
+  statusEl.textContent =
+    `state=${state} cursor=${cursor} tracks=${library.length}`;
 }
 
 function select() {
   const choice = menus[state][cursor];
+  statusEl.textContent = `SELECT ${choice}`;
 
-  if(state==='root') {
-    state = choice==='Local Music' ? 'local' : 'streaming';
-    cursor=0;
-  }
-  else if(state==='local') {
-    if(choice==='Upload') fileInput.click();
-    if(choice==='All Songs' && library.length) playIndex(0);
-    if(choice==='Shuffle' && library.length)
+  if(state === 'root') {
+    state = choice === 'Local Music' ? 'local' : 'streaming';
+    cursor = 0;
+  } else if(state === 'local') {
+    if(choice === 'Upload') fileInput.click();
+    if(choice === 'Play First' && library.length) playIndex(0);
+    if(choice === 'Shuffle' && library.length)
       playIndex(Math.floor(Math.random()*library.length));
-  }
-  else if(state==='streaming') {
+  } else if(state === 'streaming') {
     loadRadio();
   }
   render();
 }
 
 function playIndex(i) {
-  if(!library[i]) return;
-  current=i;
-  audio.src=library[i].url;
+  current = i;
+  audio.src = library[i].url;
   audio.play();
+  statusEl.textContent = `PLAYING ${library[i].name}`;
 }
 
 fileInput.onchange = e => {
   for(const f of e.target.files) {
-    library.push({name:f.name,url:URL.createObjectURL(f)});
+    library.push({name:f.name, url:URL.createObjectURL(f)});
   }
+  render();
 };
 
 async function loadRadio() {
+  statusEl.textContent = 'LOADING RADIO';
   const res = await fetch(
-    'https://de1.api.radio-browser.info/json/stations/topvote/10'
+    'https://de1.api.radio-browser.info/json/stations/topvote/5'
   );
   const stations = await res.json();
   audio.src = stations[0].url_resolved;
   audio.play();
 }
+
 btnNext.onclick = () => {
-  if (audio.src) {
-    library.length && playIndex((current+1)%library.length);
-  } else {
-    cursor = (cursor + 1) % menus[state].length;
-    render();
-  }
+  cursor = (cursor + 1) % menus[state].length;
+  render();
 };
 
 btnPrev.onclick = () => {
-  if (audio.src) {
-    library.length && playIndex((current-1+library.length)%library.length);
-  } else {
-    cursor = (cursor - 1 + menus[state].length) % menus[state].length;
-    render();
-  }
+  cursor = (cursor - 1 + menus[state].length) % menus[state].length;
+  render();
 };
 
 btnPlay.onclick = () => {
-  if (audio.src) {
-    audio.paused ? audio.play() : audio.pause();
-  }
+  if(audio.src) audio.paused ? audio.play() : audio.pause();
 };
 
 btnMenu.onclick = () => {
-  state='root';
-  cursor=0;
-  audio.pause();
-  audio.src='';
+  state = 'root';
+  cursor = 0;
   render();
 };
 
 btnCenter.onclick = select;
-
 
 render();
 </script>
