@@ -5,55 +5,51 @@
 <title>lpod</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-html, body { margin:0; height:100%; display:flex; justify-content:center; align-items:center; background:#111; }
-#ipod-container { width:260px; height:360px; }
-#ipod { width:260px; height:360px; background:#e5e5e5; border-radius:30px; box-shadow:0 10px 30px rgba(0,0,0,.6); padding:15px; box-sizing:border-box; display:flex; flex-direction:column; }
-#screen { background:#cfd6cf; height:180px; border-radius:6px; padding:6px; box-sizing:border-box; overflow:hidden; flex-shrink:0; }
-#header{text-align:center; font-weight:bold; font-size:16px;}
-#menu { list-style:none; padding:0; margin:6px 0 0 0; height:40px; overflow:hidden; font-size:14px; }
-#tracklist { list-style:none; padding:0; margin:2px 0 0 0; max-height:60px; overflow:auto; font-size:14px; }
-#menu li, #tracklist li { padding:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+body { background:#111; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:monospace; }
+#ipod { width:260px; background:#e5e5e5; border-radius:30px; box-shadow:0 10px 30px rgba(0,0,0,.6); padding:15px; box-sizing:border-box; }
+#screen { background:#cfd6cf; height:180px; border-radius:6px; padding:6px; box-sizing:border-box; overflow:hidden; }
+#header{text-align:center; font-weight:bold;}
+#menu, #tracklist{list-style:none;padding:0;margin:6px 0 0 0; max-height:60px; overflow:hidden;}
+#menu li, #tracklist li{padding:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .active{background:black;color:white;}
-#wheel{margin-top:5px;width:160px;height:160px;border-radius:50%;background:#ddd;position:relative;margin-left:auto;margin-right:auto; flex-shrink:0;}
-#wheel button{position:absolute;border:none;background:none;font-weight:bold;cursor:pointer;font-size:16px;}
-#btn-menu{top:10px; left:50px;}
-#btn-play{bottom:10px; left:60px;}
-#btn-prev{left:10px; top:60px;}
-#btn-next{right:10px; top:60px;}
-#btn-center{width:45px;height:45px;border-radius:50%;background:#666;top:57px; left:57px; position:absolute;}
-#btn-center::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#333;}
-/* Now Playing container separate */
-#nowplaying { display:none; flex-direction:column; margin-top:5px; }
-#track-info,#progress-container,#time,#status { margin-top:2px; font-size:12px; }
-#progress-container{width:100%;height:6px;background:#aaa;border-radius:3px;position:relative;}
+#track-info{margin-top:6px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#progress-container{width:100%;height:6px;background:#aaa;border-radius:3px;margin-top:4px;position:relative;}
 #progress{height:100%;background:#333;border-radius:3px;width:0%;}
-#time{text-align:right;}
+#time{font-size:10px;text-align:right;margin-top:2px;}
+#status{font-size:10px;margin-top:2px;}
+#wheel{margin-top:15px;width:180px;height:180px;border-radius:50%;background:#ddd;position:relative;margin-left:auto;margin-right:auto;}
+#wheel button{position:absolute;border:none;background:none;font-weight:bold;cursor:pointer;}
+#btn-menu{top:10px; left:65px;}
+#btn-play{bottom:10px; left:70px;}
+#btn-prev{left:10px; top:75px;}
+#btn-next{right:10px; top:75px;}
+#btn-center{width:60px;height:60px;border-radius:50%;background:#666;top:60px; left:60px; position:absolute;}
+#btn-center::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:25px;height:25px;border-radius:50%;background:#333;}
 </style>
 </head>
 <body>
 
-<div id="ipod-container">
-  <div id="ipod">
-    <div id="screen">
-      <div id="header">lpod</div>
-      <ul id="menu"></ul>
-      <ul id="tracklist"></ul>
-      <!-- Separate Now Playing container -->
-      <div id="nowplaying">
-        <div id="track-info"></div>
-        <div id="progress-container"><div id="progress"></div></div>
-        <div id="time"></div>
-        <div id="status"></div>
-      </div>
-    </div>
+<div id="ipod">
+  <div id="screen">
+    <div id="header">lpod</div>
+    <ul id="menu"></ul>
+    <ul id="tracklist"></ul>
 
-    <div id="wheel">
-      <button id="btn-menu">MENU</button>
-      <button id="btn-play">▶</button>
-      <button id="btn-prev">≪</button>
-      <button id="btn-next">≫</button>
-      <button id="btn-center"></button>
+    <!-- Now Playing elements -->
+    <div id="nowplaying-container" style="display:none;">
+      <div id="track-info"></div>
+      <div id="progress-container"><div id="progress"></div></div>
+      <div id="time"></div>
+      <div id="status"></div>
     </div>
+  </div>
+
+  <div id="wheel">
+    <button id="btn-menu">MENU</button>
+    <button id="btn-play">▶</button>
+    <button id="btn-prev">≪</button>
+    <button id="btn-next">≫</button>
+    <button id="btn-center"></button>
   </div>
 </div>
 
@@ -61,12 +57,10 @@ html, body { margin:0; height:100%; display:flex; justify-content:center; align-
 <audio id="audio"></audio>
 
 <script>
-// --- State and elements ---
 const menuEl = document.getElementById('menu');
 const tracklistEl = document.getElementById('tracklist');
-const nowPlayingEl = document.getElementById('nowplaying');
+const nowPlayingContainer = document.getElementById('nowplaying-container');
 const trackInfo = document.getElementById('track-info');
-const progressContainer = document.getElementById('progress-container');
 const progressEl = document.getElementById('progress');
 const timeEl = document.getElementById('time');
 const statusEl = document.getElementById('status');
@@ -79,7 +73,7 @@ const btnPlay = document.getElementById('btn-play');
 const btnMenu = document.getElementById('btn-menu');
 const btnCenter = document.getElementById('btn-center');
 
-let state='root'; 
+let state='root'; // root, music, nowplaying, streaming
 let cursor=0;
 let library=[];
 let current=0;
@@ -92,21 +86,20 @@ const musicMenu=['Upload','Play First','Shuffle','Now Playing'];
 function resetInactivity(){
   clearTimeout(inactivityTimer);
   if(state==='music'){
-    inactivityTimer=setTimeout(()=>{
+    inactivityTimer = setTimeout(()=>{
       if(audio.src) state='nowplaying';
       render();
-    },30000);
+    }, 30000); // 3 seconds inactivity
   }
 }
 
-// --- Render function ---
 function render(){
   resetInactivity();
   menuEl.innerHTML='';
   tracklistEl.innerHTML='';
 
-  // Hide Now Playing container by default
-  nowPlayingEl.style.display='none';
+  // Hide Now Playing container unless in nowplaying state
+  nowPlayingContainer.style.display = state==='nowplaying' ? 'block' : 'none';
 
   if(state==='root'){
     rootMenu.forEach((item,i)=>{
@@ -115,43 +108,27 @@ function render(){
       if(i===cursor) li.className='active';
       menuEl.appendChild(li);
     });
-  }
-  else if(state==='music'){
+  } else if(state==='music'){
     musicMenu.forEach((item,i)=>{
       const li=document.createElement('li');
       li.textContent=item;
       if(i===cursor) li.className='active';
       menuEl.appendChild(li);
     });
-
-    if(cursor>=musicMenu.length){
-      library.forEach((track,i)=>{
-        const li=document.createElement('li');
-        li.textContent=track.name;
-        if(i+musicMenu.length===cursor) li.className='active';
-        tracklistEl.appendChild(li);
-      });
-      const activeLi = tracklistEl.querySelector('.active');
-      if(activeLi){
-        activeLi.scrollIntoView({block:'center', behavior:'smooth'});
-      }
-    }
-
-    if(shuffle){ statusEl.textContent='Shuffle: ON'; nowPlayingEl.style.display='flex'; }
-  }
-  else if(state==='nowplaying'){
-    if(library[current]){
-      // Show now playing container
-      nowPlayingEl.style.display='flex';
-      trackInfo.textContent = library[current].name;
-      progressEl.style.width=(audio.currentTime/audio.duration)*100+'%';
-      timeEl.textContent = audio.duration ? formatTime(audio.currentTime)+' / '+formatTime(audio.duration) : '0:00';
-      statusEl.textContent = shuffle?'Shuffle: ON':'';
-    }
+    library.forEach((track,i)=>{
+      const li=document.createElement('li');
+      li.textContent=track.name;
+      if(i+musicMenu.length===cursor) li.className='active';
+      tracklistEl.appendChild(li);
+    });
+  } else if(state==='nowplaying'){
+    trackInfo.textContent = library[current]?.name || '';
+    progressEl.style.width = audio.duration ? (audio.currentTime/audio.duration)*100+'%' : '0%';
+    timeEl.textContent = audio.duration ? `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}` : '0:00';
+    statusEl.textContent = shuffle?'Shuffle: ON':'';
   }
 }
 
-// --- Audio functions ---
 function playIndex(i){
   current=i;
   audio.src=library[i].url;
@@ -160,73 +137,72 @@ function playIndex(i){
   render();
 }
 
-fileInput.onchange=e=>{
+fileInput.onchange = e => {
   for(const f of e.target.files){
     library.push({name:f.name,url:URL.createObjectURL(f)});
   }
-  cursor=musicMenu.indexOf('Now Playing')+1;
+  cursor = musicMenu.indexOf('Now Playing') + 1;
   render();
 };
 
 async function loadRadio(){
   statusEl.textContent='Loading Radio...';
-  const res=await fetch('https://de1.api.radio-browser.info/json/stations/topvote/5');
-  const stations=await res.json();
-  audio.src=stations[0].url_resolved;
+  const res = await fetch('https://de1.api.radio-browser.info/json/stations/topvote/5');
+  const stations = await res.json();
+  audio.src = stations[0].url_resolved;
   audio.play();
   state='nowplaying';
   render();
 }
 
 function formatTime(sec){ let m=Math.floor(sec/60), s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
-audio.ontimeupdate=()=>{
+audio.ontimeupdate = () => {
   if(state==='nowplaying' && audio.duration){
-    progressEl.style.width=(audio.currentTime/audio.duration)*100+'%';
-    timeEl.textContent=`${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+    progressEl.style.width = (audio.currentTime/audio.duration)*100+'%';
+    timeEl.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
   }
 };
-audio.onended=()=>{ 
+audio.onended = () => { 
   if(library.length){
-    current=shuffle?Math.floor(Math.random()*library.length):(current+1)%library.length; 
+    current = shuffle?Math.floor(Math.random()*library.length):(current+1)%library.length; 
     playIndex(current); 
   }
 }
 
-// --- Controls ---
 function select(){
-  resetInactivity();
   if(state==='root'){
     if(rootMenu[cursor]==='Local Music'){ state='music'; cursor=0; }
     else if(rootMenu[cursor]==='Streaming'){ loadRadio(); }
-  }
-  else if(state==='music'){
+  } else if(state==='music'){
     if(cursor<musicMenu.length){
-      const choice=musicMenu[cursor];
+      const choice = musicMenu[cursor];
       if(choice==='Upload') fileInput.click();
-      else if(choice==='Play First' && library.length) playIndex(0);
-      else if(choice==='Shuffle' && library.length){ shuffle=!shuffle; if(shuffle) current=Math.floor(Math.random()*library.length); playIndex(current);}
-      else if(choice==='Now Playing' && audio.src) state='nowplaying';
-    }
-    else{
-      current=cursor-musicMenu.length;
+      if(choice==='Play First' && library.length) playIndex(0);
+      if(choice==='Shuffle' && library.length){ shuffle=!shuffle; if(shuffle) current=Math.floor(Math.random()*library.length); playIndex(current);}
+      if(choice==='Now Playing' && audio.src) state='nowplaying';
+    } else {
+      current = cursor - musicMenu.length;
       playIndex(current);
     }
   }
   render();
 }
 
-btnNext.onclick=()=>{ resetInactivity(); if(state==='nowplaying'){ current=(current+1)%library.length; playIndex(current);}
-else if(state==='music'){ cursor=(cursor+1)%(musicMenu.length+library.length); render();}
-else if(state==='root'){ cursor=(cursor+1)%rootMenu.length; render(); }};
-btnPrev.onclick=()=>{ resetInactivity(); if(state==='nowplaying'){ current=(current-1+library.length)%library.length; playIndex(current);}
-else if(state==='music'){ cursor=(cursor-1+musicMenu.length+library.length)%(musicMenu.length+library.length); render();}
-else if(state==='root'){ cursor=(cursor-1+rootMenu.length)%rootMenu.length; render(); }};
-btnPlay.onclick=()=>{ resetInactivity(); if(audio.src) audio.paused?audio.play():audio.pause(); };
-btnMenu.onclick=()=>{ resetInactivity(); state='root'; cursor=0; render(); };
-btnCenter.onclick=select;
+btnNext.onclick = () => {
+  if(state==='nowplaying'){ current=(current+1)%library.length; playIndex(current); }
+  else if(state==='music'){ cursor=(cursor+1)%(musicMenu.length+library.length); render(); }
+  else if(state==='root'){ cursor=(cursor+1)%rootMenu.length; render(); }
+};
+btnPrev.onclick = () => {
+  if(state==='nowplaying'){ current=(current-1+library.length)%library.length; playIndex(current); }
+  else if(state==='music'){ cursor=(cursor-1+musicMenu.length+library.length)%(musicMenu.length+library.length); render(); }
+  else if(state==='root'){ cursor=(cursor-1+rootMenu.length)%rootMenu.length; render(); }
+};
+btnPlay.onclick = () => { if(audio.src) audio.paused?audio.play():audio.pause(); };
+btnMenu.onclick = () => { state='root'; cursor=0; render(); };
+btnCenter.onclick = select;
 
 document.addEventListener('keydown',e=>{
-  resetInactivity();
   if(e.key==='ArrowRight' && audio.src) audio.currentTime+=10;
   if(e.key==='ArrowLeft' && audio.src) audio.currentTime-=10;
   if(e.key===' ') { e.preventDefault(); btnPlay.click(); }
