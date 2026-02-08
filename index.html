@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>lpod</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- lpod core styles -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/formerlegend3323/lpod@main/style.css">
+</head>
+<body>
+  <div id="ipod">
+    <div id="screen">
+      <div id="header">lpod</div>
+      <ul id="menu"></ul>
+    </div>
+    <div id="wheel">
+      <button id="btn-menu">MENU</button>
+      <button id="btn-play">▶︎</button>
+      <button id="btn-next">≫</button>
+      <button id="btn-prev">≪</button>
+      <button id="btn-center"></button>
+    </div>
+  </div>
+
+  <input type="file" id="fileInput" accept="audio/*" multiple hidden />
+  <audio id="audio"></audio>
+
+  <!-- lpod logic -->
+  <script src="https://cdn.jsdelivr.net/gh/formerlegend3323/lpod@main/app.js"></script>
+</body>
+</html>
