@@ -73,13 +73,29 @@ let cursor=0;
 let library=[];
 let current=0;
 let shuffle=false;
+let inactivityTimer;
 
 const rootMenu=['Local Music','Streaming'];
-const musicMenu=['Upload','Play First','Shuffle'];
+const musicMenuBase=['Upload','Play First','Shuffle','Now Playing']; // Added Now Playing option
+
+function resetInactivity(){
+  clearTimeout(inactivityTimer);
+  if(state!=='nowplaying'){
+    inactivityTimer=setTimeout(()=>{
+      if(audio.src) state='nowplaying';
+      renderMenu();
+    },30000); // 30 seconds
+  }
+}
 
 function renderMenu(){
+  resetInactivity();
   menuEl.innerHTML='';
   tracklistEl.innerHTML='';
+  trackInfo.textContent='';
+  progressEl.style.width='0%';
+  timeEl.textContent='';
+  statusEl.textContent=shuffle?'Shuffle: ON':'';
   if(state==='root'){
     rootMenu.forEach((item,i)=>{
       const li=document.createElement('li');
@@ -88,22 +104,23 @@ function renderMenu(){
       menuEl.appendChild(li);
     });
   } else if(state==='music'){
-    musicMenu.forEach((item,i)=>{
+    musicMenuBase.forEach((item,i)=>{
       const li=document.createElement('li');
       li.textContent=item;
-      if(i===cursor && cursor<musicMenu.length) li.className='active';
+      if(i===cursor) li.className='active';
       menuEl.appendChild(li);
     });
-    library.forEach((track,i)=>{
-      const li=document.createElement('li');
-      li.textContent=track.name;
-      if(i+musicMenu.length===cursor) li.className='active';
-      tracklistEl.appendChild(li);
-    });
+    if(cursor>=musicMenuBase.length || cursor===musicMenuBase.indexOf('Now Playing')){
+      library.forEach((track,i)=>{
+        const li=document.createElement('li');
+        li.textContent=track.name;
+        if(i+musicMenuBase.length===cursor) li.className='active';
+        tracklistEl.appendChild(li);
+      });
+    }
   } else if(state==='nowplaying'){
     trackInfo.textContent = library[current]?.name || '';
   }
-  statusEl.textContent = shuffle ? 'Shuffle: ON' : '';
 }
 
 function playIndex(i){
@@ -118,7 +135,7 @@ fileInput.onchange=e=>{
   for(const f of e.target.files){
     library.push({name:f.name,url:URL.createObjectURL(f)});
   }
-  cursor=musicMenu.length; // first track
+  cursor=musicMenuBase.indexOf('Now Playing')+1; // first track
   renderMenu();
 };
 
@@ -134,7 +151,7 @@ async function loadRadio(){
 
 function formatTime(sec){ let m=Math.floor(sec/60), s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
 audio.ontimeupdate=()=>{
-  if(audio.duration){
+  if(state==='nowplaying' && audio.duration){
     progressEl.style.width=(audio.currentTime/audio.duration)*100+'%';
     timeEl.textContent=`${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
   }
@@ -142,17 +159,19 @@ audio.ontimeupdate=()=>{
 audio.onended=()=>{ current=shuffle?Math.floor(Math.random()*library.length):(current+1)%library.length; playIndex(current); }
 
 function select(){
+  resetInactivity();
   if(state==='root'){
     if(rootMenu[cursor]==='Local Music'){ state='music'; cursor=0; }
     else if(rootMenu[cursor]==='Streaming'){ loadRadio(); }
   } else if(state==='music'){
-    if(cursor<musicMenu.length){
-      const choice=musicMenu[cursor];
+    if(cursor<musicMenuBase.length){
+      const choice=musicMenuBase[cursor];
       if(choice==='Upload') fileInput.click();
       if(choice==='Play First' && library.length) playIndex(0);
       if(choice==='Shuffle' && library.length){ shuffle=!shuffle; if(shuffle) current=Math.floor(Math.random()*library.length); playIndex(current); }
+      if(choice==='Now Playing' && audio.src) state='nowplaying';
     } else { // track list
-      current=cursor-musicMenu.length;
+      current=cursor-musicMenuBase.length;
       playIndex(current);
     }
   }
@@ -160,20 +179,23 @@ function select(){
 }
 
 btnNext.onclick=()=>{
+  resetInactivity();
   if(state==='nowplaying'){ current=(current+1)%library.length; playIndex(current); }
-  else if(state==='music'){ cursor=(cursor+1)%(musicMenu.length+library.length); renderMenu(); }
+  else if(state==='music'){ cursor=(cursor+1)%(musicMenuBase.length+library.length); renderMenu(); }
   else if(state==='root'){ cursor=(cursor+1)%rootMenu.length; renderMenu(); }
 };
 btnPrev.onclick=()=>{
+  resetInactivity();
   if(state==='nowplaying'){ current=(current-1+library.length)%library.length; playIndex(current); }
-  else if(state==='music'){ cursor=(cursor-1+musicMenu.length+library.length)%(musicMenu.length+library.length); renderMenu(); }
+  else if(state==='music'){ cursor=(cursor-1+musicMenuBase.length+library.length)%(musicMenuBase.length+library.length); renderMenu(); }
   else if(state==='root'){ cursor=(cursor-1+rootMenu.length)%rootMenu.length; renderMenu(); }
 };
-btnPlay.onclick=()=>{ if(audio.src) audio.paused?audio.play():audio.pause(); };
-btnMenu.onclick=()=>{ state='root'; cursor=0; renderMenu(); };
+btnPlay.onclick=()=>{ resetInactivity(); if(audio.src) audio.paused?audio.play():audio.pause(); };
+btnMenu.onclick=()=>{ resetInactivity(); state='root'; cursor=0; renderMenu(); };
 btnCenter.onclick=select;
 
 document.addEventListener('keydown',e=>{
+  resetInactivity();
   if(e.key==='ArrowRight' && audio.src) audio.currentTime+=10;
   if(e.key==='ArrowLeft' && audio.src) audio.currentTime-=10;
   if(e.key===' ') { e.preventDefault(); btnPlay.click(); }
