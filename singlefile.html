@@ -179,12 +179,40 @@ async function loadRadio() {
   audio.src = stations[0].url_resolved;
   audio.play();
 }
+btnNext.onclick = () => {
+  if (audio.src) {
+    library.length && playIndex((current+1)%library.length);
+  } else {
+    cursor = (cursor + 1) % menus[state].length;
+    render();
+  }
+};
 
-btnNext.onclick = ()=> library.length && playIndex((current+1)%library.length);
-btnPrev.onclick = ()=> library.length && playIndex((current-1+library.length)%library.length);
-btnPlay.onclick = ()=> audio.paused?audio.play():audio.pause();
-btnMenu.onclick = ()=> { state='root'; cursor=0; render(); };
+btnPrev.onclick = () => {
+  if (audio.src) {
+    library.length && playIndex((current-1+library.length)%library.length);
+  } else {
+    cursor = (cursor - 1 + menus[state].length) % menus[state].length;
+    render();
+  }
+};
+
+btnPlay.onclick = () => {
+  if (audio.src) {
+    audio.paused ? audio.play() : audio.pause();
+  }
+};
+
+btnMenu.onclick = () => {
+  state='root';
+  cursor=0;
+  audio.pause();
+  audio.src='';
+  render();
+};
+
 btnCenter.onclick = select;
+
 
 render();
 </script>
