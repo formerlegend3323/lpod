@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>lpod</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  background:#111;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  margin:0;
+  font-family: monospace;
+}
+
+#ipod {
+  width:260px;
+  background:#e5e5e5;
+  border-radius:30px;
+  box-shadow:0 10px 30px rgba(0,0,0,.6);
+  padding:15px;
+}
+
+#screen {
+  background:#cfd6cf;
+  height:160px;
+  border-radius:6px;
+  padding:6px;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+
+#header {
+  font-weight:bold;
+  text-align:center;
+  margin-bottom:4px;
+}
+
+#menu {
+  list-style:none;
+  padding:0;
+  margin:0;
+}
+
+#menu li {
+  padding:3px 6px;
+}
+
+#menu li.active {
+  background:#000;
+  color:#fff;
+}
+
+#wheel {
+  margin-top:15px;
+  width:200px;
+  height:200px;
+  border-radius:50%;
+  background:#ddd;
+  position:relative;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+#wheel button {
+  position:absolute;
+  background:none;
+  border:none;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+#btn-menu { top:15px; left:75px; }
+#btn-play { bottom:15px; left:80px; }
+#btn-prev { left:15px; top:85px; }
+#btn-next { right:15px; top:85px; }
+#btn-center {
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:#ccc;
+  top:70px;
+  left:70px;
+}
+</style>
+</head>
+
+<body>
+<div id="ipod">
+  <div id="screen">
+    <div id="header">lpod</div>
+    <ul id="menu"></ul>
+  </div>
+
+  <div id="wheel">
+    <button id="btn-menu">MENU</button>
+    <button id="btn-play">▶︎</button>
+    <button id="btn-prev">≪</button>
+    <button id="btn-next">≫</button>
+    <button id="btn-center"></button>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="audio/*" multiple hidden>
+<audio id="audio"></audio>
+
+<script>
+const menuEl = document.getElementById('menu');
+const audio = document.getElementById('audio');
+const fileInput = document.getElementById('fileInput');
+
+const btnNext = document.getElementById('btn-next');
+const btnPrev = document.getElementById('btn-prev');
+const btnPlay = document.getElementById('btn-play');
+const btnMenu = document.getElementById('btn-menu');
+const btnCenter = document.getElementById('btn-center');
+
+let state = 'root';
+let cursor = 0;
+let library = [];
+let current = 0;
+
+const menus = {
+  root: ['Local Music','Streaming'],
+  local: ['All Songs','Shuffle','Upload'],
+  streaming: ['Top Radio'],
+};
+
+function render() {
+  menuEl.innerHTML = '';
+  menus[state].forEach((item,i)=>{
+    const li=document.createElement('li');
+    li.textContent=item;
+    if(i===cursor) li.classList.add('active');
+    menuEl.appendChild(li);
+  });
+}
+
+function select() {
+  const choice = menus[state][cursor];
+
+  if(state==='root') {
+    state = choice==='Local Music' ? 'local' : 'streaming';
+    cursor=0;
+  }
+  else if(state==='local') {
+    if(choice==='Upload') fileInput.click();
+    if(choice==='All Songs' && library.length) playIndex(0);
+    if(choice==='Shuffle' && library.length)
+      playIndex(Math.floor(Math.random()*library.length));
+  }
+  else if(state==='streaming') {
+    loadRadio();
+  }
+  render();
+}
+
+function playIndex(i) {
+  if(!library[i]) return;
+  current=i;
+  audio.src=library[i].url;
+  audio.play();
+}
+
+fileInput.onchange = e => {
+  for(const f of e.target.files) {
+    library.push({name:f.name,url:URL.createObjectURL(f)});
+  }
+};
+
+async function loadRadio() {
+  const res = await fetch(
+    'https://de1.api.radio-browser.info/json/stations/topvote/10'
+  );
+  const stations = await res.json();
+  audio.src = stations[0].url_resolved;
+  audio.play();
+}
+
+btnNext.onclick = ()=> library.length && playIndex((current+1)%library.length);
+btnPrev.onclick = ()=> library.length && playIndex((current-1+library.length)%library.length);
+btnPlay.onclick = ()=> audio.paused?audio.play():audio.pause();
+btnMenu.onclick = ()=> { state='root'; cursor=0; render(); };
+btnCenter.onclick = select;
+
+render();
+</script>
+</body>
+</html>
