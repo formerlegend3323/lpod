@@ -2,10 +2,16 @@ const menuEl = document.getElementById('menu');
 const audio = document.getElementById('audio');
 const fileInput = document.getElementById('fileInput');
 
+const btnNext = document.getElementById('btn-next');
+const btnPrev = document.getElementById('btn-prev');
+const btnPlay = document.getElementById('btn-play');
+const btnMenu = document.getElementById('btn-menu');
+const btnCenter = document.getElementById('btn-center');
+
 let state = 'root';
 let cursor = 0;
 let library = [];
-let current = null;
+let current = 0;
 
 const menus = {
   root: ['Local Music','Streaming'],
@@ -32,8 +38,8 @@ function select() {
   }
   else if(state==='local') {
     if(choice==='Upload') fileInput.click();
-    if(choice==='All Songs') playIndex(0);
-    if(choice==='Shuffle') playIndex(Math.floor(Math.random()*library.length));
+    if(choice==='All Songs' && library.length) playIndex(0);
+    if(choice==='Shuffle' && library.length) playIndex(Math.floor(Math.random()*library.length));
   }
   else if(state==='streaming') {
     loadRadio();
@@ -61,9 +67,8 @@ async function loadRadio() {
   audio.play();
 }
 
-// controls
-btnNext.onclick = ()=> playIndex((current+1)%library.length);
-btnPrev.onclick = ()=> playIndex((current-1+library.length)%library.length);
+btnNext.onclick = ()=> library.length && playIndex((current+1)%library.length);
+btnPrev.onclick = ()=> library.length && playIndex((current-1+library.length)%library.length);
 btnPlay.onclick = ()=> audio.paused?audio.play():audio.pause();
 btnMenu.onclick = ()=> { state='root'; cursor=0; render(); };
 btnCenter.onclick = select;
