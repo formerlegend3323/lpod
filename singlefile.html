@@ -48,7 +48,7 @@ body { background:#111; display:flex; justify-content:center; align-items:center
 
   <div id="wheel">
     <button id="btn-menu">MENU</button>
-    <button id="btn-play">▶</button>
+    <button id="btn-play"> ▶</button>
     <button id="btn-prev">≪</button>
     <button id="btn-next">≫</button>
     <button id="btn-center"></button>
@@ -81,7 +81,7 @@ let current=0;
 let shuffle=true; // auto shuffle on upload
 let inactivityTimer=null;
 
-const rootMenu=['Local Music','Streaming'];
+const rootMenu=['Uploaded Music','Streaming .broken asf.'];
 const musicMenu=['Upload','Play First','Shuffle','Now Playing'];
 
 // --- inactivity timer ---
@@ -177,8 +177,8 @@ audio.onended = () => {
 // --- controls ---
 function select(){
   if(state==='root'){
-    if(rootMenu[cursor]==='Local Music'){ state='music'; cursor=0; }
-    else if(rootMenu[cursor]==='Streaming'){ loadRadio(); }
+    if(rootMenu[cursor]==='Uploaded Music'){ state='music'; cursor=0; }
+    else if(rootMenu[cursor]==='Streaming .broken asf.'){ loadRadio(); }
   } else if(state==='music'){
     const choice = musicMenu[cursor];
     if(choice==='Upload') fileInput.click();
