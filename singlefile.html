@@ -22,11 +22,12 @@ body {
   border-radius:30px;
   box-shadow:0 10px 30px rgba(0,0,0,.6);
   padding:15px;
+  box-sizing:border-box;
 }
 
 #screen {
   background:#cfd6cf;
-  height:160px;
+  height:180px;
   border-radius:6px;
   padding:6px;
   box-sizing:border-box;
@@ -38,7 +39,7 @@ body {
   font-weight:bold;
 }
 
-#menu {
+#menu, #tracklist {
   list-style:none;
   padding:0;
   margin:6px 0 0 0;
@@ -46,23 +47,24 @@ body {
   overflow:hidden;
 }
 
-#menu li {
+#menu li, #tracklist li {
   padding:4px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
-#menu li.active {
+.active {
   background:black;
   color:white;
-}
-
-#status {
-  font-size:10px;
-  margin-top:4px;
 }
 
 #track-info {
   margin-top:6px;
   font-size:12px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
 #progress-container {
@@ -84,6 +86,11 @@ body {
 #time {
   font-size:10px;
   text-align:right;
+  margin-top:2px;
+}
+
+#status {
+  font-size:10px;
   margin-top:2px;
 }
 
@@ -138,6 +145,7 @@ body {
   <div id="screen">
     <div id="header">lpod</div>
     <ul id="menu"></ul>
+    <ul id="tracklist"></ul>
     <div id="track-info"></div>
     <div id="progress-container"><div id="progress"></div></div>
     <div id="time"></div>
@@ -158,6 +166,7 @@ body {
 
 <script>
 const menuEl = document.getElementById('menu');
+const tracklistEl = document.getElementById('tracklist');
 const trackInfo = document.getElementById('track-info');
 const progressEl = document.getElementById('progress');
 const timeEl = document.getElementById('time');
@@ -179,11 +188,11 @@ let shuffle = false;
 
 const menus = {
   root: ['Local Music','Streaming'],
-  local: ['Upload','Play First','Shuffle'],
+  local: ['Upload','Shuffle'],
   streaming: ['Top Radio'],
 };
 
-function render() {
+function renderMenu() {
   menuEl.innerHTML = '';
   menus[state].forEach((item,i)=>{
     const li = document.createElement('li');
@@ -191,34 +200,53 @@ function render() {
     if(i === cursor) li.className = 'active';
     menuEl.appendChild(li);
   });
-  statusEl.textContent = shuffle ? 'Shuffle: ON' : '';
-  if(audio.src && library[current]) {
-    trackInfo.textContent = library[current].name;
-  } else {
-    trackInfo.textContent = '';
+}
+
+function renderTrackList() {
+  tracklistEl.innerHTML = '';
+  if(state==='local' && library.length){
+    library.forEach((track,i)=>{
+      const li = document.createElement('li');
+      li.textContent = track.name;
+      if(i===cursor) li.className='active';
+      tracklistEl.appendChild(li);
+    });
   }
 }
 
+function render() {
+  renderMenu();
+  renderTrackList();
+  statusEl.textContent = shuffle ? 'Shuffle: ON' : '';
+  if(audio.src && library[current]) {
+    trackInfo.textContent = library[current].name;
+  } else trackInfo.textContent='';
+}
+
 function select() {
-  const choice = menus[state][cursor];
-  if(state==='root') {
-    state = choice==='Local Music'?'local':'streaming';
+  if(state==='root'){
+    state = menus.root[cursor]==='Local Music'?'local':'streaming';
     cursor=0;
-  } else if(state==='local') {
-    if(choice==='Upload') fileInput.click();
-    if(choice==='Play First' && library.length) playIndex(0);
-    if(choice==='Shuffle' && library.length) {
-      shuffle = !shuffle;
-      render();
-      if(shuffle) playIndex(Math.floor(Math.random()*library.length));
+  } else if(state==='local'){
+    if(cursor<menus.local.length){ // top menu options
+      const choice = menus.local[cursor];
+      if(choice==='Upload') fileInput.click();
+      if(choice==='Shuffle' && library.length) {
+        shuffle=!shuffle;
+        if(shuffle) current = Math.floor(Math.random()*library.length);
+        playIndex(current);
+      }
+    } else { // track list
+      current = cursor - menus.local.length;
+      playIndex(current);
     }
-  } else if(state==='streaming') {
+  } else if(state==='streaming'){
     loadRadio();
   }
   render();
 }
 
-function playIndex(i) {
+function playIndex(i){
   current=i;
   audio.src=library[i].url;
   audio.play();
@@ -226,13 +254,14 @@ function playIndex(i) {
 }
 
 fileInput.onchange = e => {
-  for(const f of e.target.files) {
+  for(const f of e.target.files){
     library.push({name:f.name,url:URL.createObjectURL(f)});
   }
+  cursor = menus.local.length; // first track
   render();
 };
 
-async function loadRadio() {
+async function loadRadio(){
   statusEl.textContent='Loading Radio...';
   const res = await fetch('https://de1.api.radio-browser.info/json/stations/topvote/5');
   const stations = await res.json();
@@ -247,53 +276,49 @@ function formatTime(sec){
 
 audio.ontimeupdate = () => {
   if(audio.duration){
-    let p = (audio.currentTime/audio.duration)*100;
-    progressEl.style.width = p+'%';
+    progressEl.style.width = (audio.currentTime/audio.duration)*100 + '%';
     timeEl.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
   }
 };
 
-btnNext.onclick = () => {
-  if(audio.src && audio.currentTime > audio.duration-5){
+audio.onended = () => {
+  if(shuffle){
+    current = Math.floor(Math.random()*library.length);
+  } else {
     current = (current+1)%library.length;
-    playIndex(current);
-  } else if(audio.src) {
-    audio.currentTime += 10;
-  } else {
-    cursor = (cursor + 1) % menus[state].length;
-    render();
   }
+  playIndex(current);
 };
 
-btnPrev.onclick = () => {
-  if(audio.src && audio.currentTime < 5){
-    current = (current-1+library.length)%library.length;
+btnNext.onclick = () => {
+  if(state==='local' && cursor>=menus.local.length){
+    current=(current+1)%library.length;
     playIndex(current);
-  } else if(audio.src) {
-    audio.currentTime -= 10;
-  } else {
-    cursor = (cursor - 1 + menus[state].length) % menus[state].length;
-    render();
+    cursor=menus.local.length + current;
+  } else if(state==='local' && cursor<menus.local.length){
+    cursor = (cursor + 1) % menus.local.length;
   }
-};
-
-btnPlay.onclick = () => {
-  if(audio.src) audio.paused ? audio.play() : audio.pause();
-};
-
-btnMenu.onclick = () => {
-  state='root';
-  cursor=0;
-  audio.pause();
-  audio.src='';
   render();
 };
 
+btnPrev.onclick = () => {
+  if(state==='local' && cursor>=menus.local.length){
+    current=(current-1+library.length)%library.length;
+    playIndex(current);
+    cursor=menus.local.length + current;
+  } else if(state==='local' && cursor<menus.local.length){
+    cursor = (cursor - 1 + menus.local.length) % menus.local.length;
+  }
+  render();
+};
+
+btnPlay.onclick = () => { if(audio.src) audio.paused?audio.play():audio.pause(); };
+btnMenu.onclick = () => { state='root'; cursor=0; render(); };
 btnCenter.onclick = select;
 
 document.addEventListener('keydown', e => {
-  if(e.key==='ArrowRight') btnNext.click();
-  if(e.key==='ArrowLeft') btnPrev.click();
+  if(e.key==='ArrowRight' && audio.src) audio.currentTime+=10;
+  if(e.key==='ArrowLeft' && audio.src) audio.currentTime-=10;
   if(e.key===' ') { e.preventDefault(); btnPlay.click(); }
 });
 
