@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 html, body { margin:0; height:100%; display:flex; justify-content:center; align-items:center; background:#111; }
-#ipod-container { width:260px; height:360px; transform-origin:top left; }
+#ipod-container { width:260px; height:360px; }
 #ipod { width:260px; height:360px; background:#e5e5e5; border-radius:30px; box-shadow:0 10px 30px rgba(0,0,0,.6); padding:15px; box-sizing:border-box; }
 #screen { background:#cfd6cf; height:180px; border-radius:6px; padding:6px; box-sizing:border-box; overflow:hidden; }
 #header{text-align:center; font-weight:bold; font-size:16px;}
@@ -57,17 +57,6 @@ html, body { margin:0; height:100%; display:flex; justify-content:center; align-
 <audio id="audio"></audio>
 
 <script>
-// --- Scaling ---
-function scaleIPod() {
-  const container = document.getElementById('ipod-container');
-  const scaleX = window.innerWidth / 260;
-  const scaleY = window.innerHeight / 360;
-  const scale = Math.min(scaleX, scaleY);
-  container.style.transform = `scale(${scale})`;
-}
-window.addEventListener('resize', scaleIPod);
-scaleIPod();
-
 // --- State and elements ---
 const menuEl = document.getElementById('menu');
 const tracklistEl = document.getElementById('tracklist');
