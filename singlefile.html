@@ -6,12 +6,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body { background:#111; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:monospace; }
-#ipod { width:260px; background:#e5e5e5; border-radius:30px; box-shadow:0 10px 30px rgba(0,0,0,.6); padding:15px; box-sizing:border-box; }
-#screen { background:#cfd6cf; height:180px; border-radius:6px; padding:6px; box-sizing:border-box; overflow:hidden; }
+#ipod { width:260px; background:#e5e5e5; border-radius:30px; box-shadow:0 10px 30px rgba(0,0,0,.6); padding:15px; box-sizing:border-box; display:flex; flex-direction:column; }
+#screen { background:#cfd6cf; height:180px; border-radius:6px; padding:6px; box-sizing:border-box; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-start; }
 #header{text-align:center; font-weight:bold;}
-#menu{list-style:none;padding:0;margin:6px 0 0 0; max-height:60px; overflow:hidden;}
+#menu{list-style:none;padding:0;margin:6px 0 0 0; overflow:hidden; flex-grow:1;}
 #menu li{padding:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .active{background:black;color:white;}
+#nowplaying-container{display:none; flex-direction:column; flex-grow:1;}
 #track-info{margin-top:6px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #progress-container{width:100%;height:6px;background:#aaa;border-radius:3px;margin-top:4px;position:relative;}
 #progress{height:100%;background:#333;border-radius:3px;width:0%;}
@@ -35,7 +36,7 @@ body { background:#111; display:flex; justify-content:center; align-items:center
     <ul id="menu"></ul>
 
     <!-- Now Playing container -->
-    <div id="nowplaying-container" style="display:none;">
+    <div id="nowplaying-container">
       <div id="track-info"></div>
       <div id="progress-container"><div id="progress"></div></div>
       <div id="time"></div>
@@ -98,7 +99,7 @@ function render(){
   menuEl.innerHTML='';
 
   // Show Now Playing container only in nowplaying state
-  nowPlayingContainer.style.display = state==='nowplaying' ? 'block' : 'none';
+  nowPlayingContainer.style.display = state==='nowplaying' ? 'flex' : 'none';
 
   if(state==='root'){
     rootMenu.forEach((item,i)=>{
@@ -192,7 +193,7 @@ btnNext.onclick = () => {
 };
 btnPrev.onclick = () => {
   if(state==='nowplaying'){ current=Math.floor(Math.random()*library.length); playIndex(current); }
-  else if(state==='music'){ cursor=(cursor-1+musicMenu.length)%musicMenu.length; render(); }
+  else if(state==='music'){ cursor=(cursor-1+musicMenu.length+musicMenu.length)%musicMenu.length; render(); }
   else if(state==='root'){ cursor=(cursor-1+rootMenu.length)%rootMenu.length; render(); }
 };
 btnPlay.onclick = () => { if(audio.src) audio.paused?audio.play():audio.pause(); };
