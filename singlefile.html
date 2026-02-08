@@ -83,22 +83,24 @@ let inactivityTimer=null;
 const rootMenu=['Local Music','Streaming'];
 const musicMenu=['Upload','Play First','Shuffle','Now Playing'];
 
+// --- inactivity timer ---
 function resetInactivity(){
   clearTimeout(inactivityTimer);
   if(state==='music'){
     inactivityTimer = setTimeout(()=>{
       if(audio.src) state='nowplaying';
       render();
-    }, 30000); // 3 seconds inactivity
+    }, 3000);
   }
 }
 
+// --- render function ---
 function render(){
   resetInactivity();
   menuEl.innerHTML='';
   tracklistEl.innerHTML='';
 
-  // Hide Now Playing container unless in nowplaying state
+  // Show Now Playing container only in nowplaying state
   nowPlayingContainer.style.display = state==='nowplaying' ? 'block' : 'none';
 
   if(state==='root'){
@@ -126,12 +128,15 @@ function render(){
     progressEl.style.width = audio.duration ? (audio.currentTime/audio.duration)*100+'%' : '0%';
     timeEl.textContent = audio.duration ? `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}` : '0:00';
     statusEl.textContent = shuffle?'Shuffle: ON':'';
+    // keep cursor synced with current track
+    cursor = musicMenu.length + current;
   }
 }
 
+// --- play functions ---
 function playIndex(i){
   current=i;
-  audio.src=library[i].url;
+  audio.src = library[i].url;
   audio.play();
   state='nowplaying';
   render();
@@ -141,7 +146,8 @@ fileInput.onchange = e => {
   for(const f of e.target.files){
     library.push({name:f.name,url:URL.createObjectURL(f)});
   }
-  cursor = musicMenu.indexOf('Now Playing') + 1;
+  // Don't auto shuffle/play, just highlight first track
+  cursor = musicMenu.length; 
   render();
 };
 
@@ -155,6 +161,7 @@ async function loadRadio(){
   render();
 }
 
+// --- helpers ---
 function formatTime(sec){ let m=Math.floor(sec/60), s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
 audio.ontimeupdate = () => {
   if(state==='nowplaying' && audio.duration){
@@ -164,11 +171,12 @@ audio.ontimeupdate = () => {
 };
 audio.onended = () => { 
   if(library.length){
-    current = shuffle?Math.floor(Math.random()*library.length):(current+1)%library.length; 
+    current = shuffle ? Math.floor(Math.random()*library.length) : (current+1)%library.length; 
     playIndex(current); 
   }
 }
 
+// --- controls ---
 function select(){
   if(state==='root'){
     if(rootMenu[cursor]==='Local Music'){ state='music'; cursor=0; }
@@ -178,7 +186,7 @@ function select(){
       const choice = musicMenu[cursor];
       if(choice==='Upload') fileInput.click();
       if(choice==='Play First' && library.length) playIndex(0);
-      if(choice==='Shuffle' && library.length){ shuffle=!shuffle; if(shuffle) current=Math.floor(Math.random()*library.length); playIndex(current);}
+      if(choice==='Shuffle' && library.length){ shuffle=!shuffle; }
       if(choice==='Now Playing' && audio.src) state='nowplaying';
     } else {
       current = cursor - musicMenu.length;
@@ -188,6 +196,7 @@ function select(){
   render();
 }
 
+// --- buttons ---
 btnNext.onclick = () => {
   if(state==='nowplaying'){ current=(current+1)%library.length; playIndex(current); }
   else if(state==='music'){ cursor=(cursor+1)%(musicMenu.length+library.length); render(); }
