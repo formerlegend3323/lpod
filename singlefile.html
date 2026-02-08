@@ -33,9 +33,11 @@ body { background:#111; display:flex; justify-content:center; align-items:center
 <div id="ipod">
   <div id="screen">
     <div id="header">lpod</div>
+
+    <!-- Menu container: always fills screen unless in nowplaying -->
     <ul id="menu"></ul>
 
-    <!-- Now Playing container -->
+    <!-- Now Playing container: only visible in nowplaying state -->
     <div id="nowplaying-container">
       <div id="track-info"></div>
       <div id="progress-container"><div id="progress"></div></div>
@@ -96,12 +98,13 @@ function resetInactivity(){
 // --- render function ---
 function render(){
   resetInactivity();
-  menuEl.innerHTML='';
-
-  // Show Now Playing container only in nowplaying state
+  
+  // Show menu only when not nowplaying
+  menuEl.style.display = state==='nowplaying' ? 'none' : 'block';
   nowPlayingContainer.style.display = state==='nowplaying' ? 'flex' : 'none';
 
   if(state==='root'){
+    menuEl.innerHTML='';
     rootMenu.forEach((item,i)=>{
       const li=document.createElement('li');
       li.textContent=item;
@@ -109,6 +112,7 @@ function render(){
       menuEl.appendChild(li);
     });
   } else if(state==='music'){
+    menuEl.innerHTML='';
     musicMenu.forEach((item,i)=>{
       const li=document.createElement('li');
       li.textContent=item;
